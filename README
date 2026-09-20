@@ -1,0 +1,63 @@
+TASK 1
+
+stereo_to_mono:
+folosesc functia mean ca sa obtin vectorul mono care contine media elementelor de pe linii din matrice
+la final normalizam vectorul
+
+spectrogram:
+aflu numarul de ferestre, cnt_windows, pe baza lungimii semnalului si window_size. initializez matricea cu 0. pentru fiecare coloana, iau in variabila window portiunea 
+de semnal care imi trebuie acum adica de la 1 + (i - 1) * window_size pana la i * window_size. Aplic functia hanning pentru window si apoi in transfft iau transformata
+fourier pentru window cu o rezolutie egala cu 2 * window_size. din aceasta iau doar primele window_size elemente, neglijand partea conjugata a transformatei. La final 
+pun modulul acestui vector in coloana i a matricii. La final obtin vectorii f si t, adica vectorul de frecvente, respectiv de timp. 
+
+oscillator:
+creez vectorul t incepand de la 0 cu pasul 1/fs. creez vectorul f pe baza lui t si in loc de elementele lui t avem formula sin(2 * pi * freq * t). Aplicam formulele 
+ca sa calculam numarul de attack samples, decay samples, sustain samples si release samples. creez attack_env care contine valori separate liniar de la 0 la 1.
+decay_env contine valori separate liniar de la 1 la sustain level. sustain_env este un vector care contine nr_sustain elemente, toate egale cu sustain level.
+envelope se obtine prin concatenarea acestora. la final determinam vectorul x ca fiind produsul direct dintre f si envelope.
+
+low_pass:
+fourier este transformata fourier a semnalului dat ca parametru. calculez signal_len, adica lungimea semnalului. pe baza vectorului f care contine toate frecventele 
+construim vectorul v care contine 1 pentru frecventele mai mici decat cutoff_freq si 0 in rest. facem produsul hadamard intre transformata fourier si masca v. 
+semnalul de care avem nevoie se obtine aplicand transformata fourier inversa. la final normalizam vectorul.
+
+apply_reverb:
+aplicam functia stereo_to_mono ca sa ne asiguram ca impulse_response este in mono. facem convolutia dintre semnalul primit ca parametru si acest mono. la final
+normalizam vectorul.
+
+
+TASK 2
+
+parse_data:
+deschidem fisierul filename. citim n. in vectorul x citim n+1 valori, adica abscisele celor n+1 puncte: x0, x1, ... xn. apoi in vectorul y citim n+1 valori 
+y0, y1, ... yn, adica ordonatele punctelor. 
+
+spline_c2:
+cream matricea sistemului, A si vectorul rezultat b. La final rezolvam sistemul: coef = A \ b. 
+
+P_spline:
+trebuie sa determinam vectorul y care contine valorile functei de interpolare in punctele date. determinam numarul de intervale n_intervals si numarul de puncte 
+in care trebuie sa gasim valoarea polinomului de interpolare. initializam vectorul y cu 0. pentru fiecare punct de interpolare caut in ce interval se afla ca sa 
+stiu ce functie ii aplic. aflu in ce interval se afla xi folosind o functie de tip cautare binara. pe baza intervalului in care se afla, gasim coeficientii 
+a, b, c si d si calculam polinomul spline in acel punct, iar valoarea obtinuta o punem in vectorul y. 
+
+vandermonde:
+fiecare coloana din A contine elementele vectorului x ridicate la o anumita putere. coloana j contine elementele lui x ridicate la puterea j - 1. 
+la final determinam vectorul coef care este solutia sistemului de ecuatii. 
+
+
+TASK 3
+preprocess:
+luam dimensiunile matricii initiale, mat. m este numarul de linii si n numarul de coloane. punem in reduced_mat doar liniile din mat care au mai mult de 
+min_reviews de valori nenule, adica o linie i este in reduced_mat daca clientul i a dat mai mult de min_reviews review-uri. 
+
+cosine_similarity:
+aplicam formula pentru a afla cosinusul dintre 2 vectori, A si B. Formula spune ca produsul scalar dintre 2 vectori este egal cu produsul normelor celor 2 
+vectori si cosinusul unghiului dintre ei. 
+
+recommendations:
+folosim functia preprocess ca sa ramanem doar cu clientii care au dat mai mult de min_reviews review-uri. folosim functia svds ca sa obtinem matricele 
+U S si V de care o sa avem nevoie mai departe. aplicam functia cosine_similarity intre fiecare coloana a matricii V si coloana liked_theme. evident, toate coloanele
+cu exceptia coloanei liked_theme. mergem de la 1 la liked_theme - 1 si apoi de la liked_theme + 1 pana la n. in vectorul v retinem aceste valori ale cosinusului
+dintre fiecare coloana si coloana liked_theme. pentru a determina indicii, pornim cu un vector e initial continand e(i) = i, cu i = 1 : length(v). sortam vectorul 
+v descrescator si facem aceleasi interschimbari si in e pentru a determina indicii pe care ii pastram. 
